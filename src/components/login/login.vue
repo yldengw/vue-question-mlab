@@ -325,7 +325,7 @@ export default {
           return response.json()
         }).then(function (result) {
           if (result.code === 0) {
-            self.$route.router.go('/platform/questionare')
+            self.$router.push('/platform/questionare')
           }
           if (result.code === -1 || result.code === -2) {
             if (result.code === -1) {
@@ -366,7 +366,7 @@ export default {
         }).then(function (result) {
           console.log(result)
           if (result.code === 0) {
-            self.$route.router.go('/platform/questionare')
+            self.$router.push('/platform/questionare')
           }
         }).catch((err) => {
           self.isLoading = false

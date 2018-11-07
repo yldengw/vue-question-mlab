@@ -9,12 +9,12 @@ var session = require('express-session')
 var MongoStore = require('connect-mongo')(session)
 // var MongoClient = require('mongodb').MongoClient
 // 密码加盐
-var bcrypt = require('bcrypt')
+var bcrypt = require('bcryptjs')
 var SALT_WORK_FACTOR = 10
 
 // 连接远程数据库
-var dbUrl = 'mongodb://localhost:27017/question'
-// var dbUrl = 'mongodb://mertens:test123@ds037205.mlab.com:37205/mertens-qn'
+// var dbUrl = 'mongodb://localhost:27017/question'
+var dbUrl = 'mongodb://yldeng:Dengyanan1123@ds261072.mlab.com:61072/yldeng'
 mongoose.connect(dbUrl)
 mongoose.connection.on('error', function (error) {
   console.log('数据库连接失败：' + error)
@@ -281,42 +281,69 @@ app.post('/signup', function (req, res) {
     email: req.body.signupEmail,
     password: req.body.signupPassword
   })
-  // 生成 salt
-  console.log('bcrypt' + JSON.stringify(_userData))
-  bcrypt.genSalt(SALT_WORK_FACTOR, function (err, salt) {
-    console.log('bcrypt:' + err)
+
+  // 随机生成salt
+  const salt = bcrypt.genSaltSync(SALT_WORK_FACTOR)
+  // 获取hash值
+  var hash = bcrypt.hashSync(_userData.password, salt)
+  // 把hash值赋值给password变量
+  _userData.password = hash
+  // 保存密码
+  _userData.save(function (err, results) {
+    console.log('dddd' + err)
     if (err) {
-      return console.log(err)
-    }
-    // 给密码加 salt
-    bcrypt.hash(_userData.password, salt, function (err, hash) {
-      if (err) {
-        return console.log(err)
-      }
-      console.log('---------------测试')
-      _userData.password = hash
-      // 保存密码
-      _userData.save(function (err, results) {
-        console.log('dddd' + err)
-        if (err) {
-          console.log(err)
-          res.send({
-            code: -1,
-            msg: 'Something error!'
-          })
-        }
-        req.session.isLogin = true
-        req.session.userInfo = {
-          userName: req.body.signupName,
-          userEmail: req.body.signupEmail
-        }
-        res.send({
-          code: 0,
-          msg: 'The registration is successful!'
-        })
+      console.log(err)
+      res.send({
+        code: -1,
+        msg: 'Something error!'
       })
+    }
+    req.session.isLogin = true
+    req.session.userInfo = {
+      userName: req.body.signupName,
+      userEmail: req.body.signupEmail
+    }
+    res.send({
+      code: 0,
+      msg: 'The registration is successful!'
     })
   })
+  // 生成 salt
+  console.log('bcrypt' + JSON.stringify(_userData))
+  // bcrypt.genSalt(SALT_WORK_FACTOR, function (err, salt) {
+  //   console.log('bcrypt:' + err)
+  //   if (err) {
+  //     return console.log(err)
+  //   }
+  //   // 给密码加 salt
+  //   bcrypt.hash(_userData.password, salt, function (err, hash) {
+  //     if (err) {
+  //       return console.log(err)
+  //     }
+  //     console.log('---------------测试')
+  //     _userData.password = hash
+  //     // 保存密码
+  //     _userData.save(function (err, results) {
+  //       console.log('dddd' + err)
+  //       if (err) {
+  //         console.log(err)
+  //         res.send({
+  //           code: -1,
+  //           msg: 'Something error!'
+  //         })
+  //       }
+  //       req.session.isLogin = true
+  //       req.session.userInfo = {
+  //         userName: req.body.signupName,
+  //         userEmail: req.body.signupEmail
+  //       }
+  //       res.send({
+  //         code: 0,
+  //         msg: 'The registration is successful!'
+  //       })
+  //     })
+  //   })
+  // })
 })
 // 用户登录
 app.post('/login', function (req, res) {
@@ -340,29 +367,27 @@ app.post('/login', function (req, res) {
       })
       return console.log('用户不存在！')
     }
-    userInfo.compare()
-    userInfo.comparePassword(loginPsd, function (err, isMatch) {
-      if (err) {
-        console.log(err)
+    const pwdMatchFlag = bcrypt.compareSync(loginPsd, userInfo.password)
+    if (!pwdMatchFlag) {
+      console.log(err)
+    }
+    if (pwdMatchFlag) {
+      req.session.isLogin = true
+      req.session.userInfo = {
+        userName: userInfo.name,
+        userEmail: userInfo.email
       }
-      if (isMatch) {
-        req.session.isLogin = true
-        req.session.userInfo = {
-          userName: userInfo.name,
-          userEmail: userInfo.email
-        }
-        console.log(req.session)
-        res.send({
-          code: 0,
-          msg: '登录成功！'
-        })
-      } else {
-        res.send({
-          code: -2,
-          msg: '密码错误'
-        })
-      }
-    })
+      console.log(req.session)
+      res.send({
+        code: 0,
+        msg: '登录成功！'
+      })
+    } else {
+      res.send({
+        code: -2,
+        msg: '密码错误'
+      })
+    }
   })
 })
 // 用户登出
