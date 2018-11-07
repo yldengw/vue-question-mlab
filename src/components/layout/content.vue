@@ -9,7 +9,7 @@
         <ul class="panel">
           <li v-for="item in routeItems" :key="item.id">
              <router-link :to="item.link">
-                          <span class="iconfont">{{ item.icon }}</span>{{item.text}}
+                          <span class="iconfont"><img src="../../../static/img/icon.jpg"></span>{{item.text}}
                         </router-link>
           </li>
         </ul>
@@ -48,6 +48,7 @@ export default {
     }
   },
   created () {
+    let vm = this
     window.fetch('/getUserName', {
       method: 'get',
       credentials: 'same-origin'
@@ -55,10 +56,10 @@ export default {
       return res.json()
     }).then(result => {
       if (result.code === 0) {
-        this.userName = result.userName
+        vm.userName = result.userName
       }
       if (result.code === -1) {
-        this.$route.router.go({ path: '/login' })
+        vm.$router.push('/login')
       }
     }).catch(err => {
       console.log(err)
